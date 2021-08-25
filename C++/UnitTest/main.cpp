@@ -9,4 +9,5 @@ int main()
 	{
 		std::wcout << iter->DisplayName << L"  " << iter->InstallLocation << L"  " << iter->Version << L"  " << iter->Icon << L"  " << (int)iter->Architecture << std::endl;
 	}
+	delete list;
 }

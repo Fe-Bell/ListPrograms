@@ -92,7 +92,7 @@ std::wstring Util::GetInstallerKeyNameFromGuid(std::wstring GuidName)
 	return MsiName;
 }
 
-std::wstring Util::ReverseString(const std::wstring& input)
+std::wstring Util::ReverseString(std::wstring& input)
 {
 	std::reverse(input.begin(), input.end());
 	return input;
