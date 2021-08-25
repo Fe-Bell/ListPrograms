@@ -1,12 +1,10 @@
 #include "RegistryKey.h"
 
-
 RegistryKey::RegistryKey(HKEY hkey, Arch arch)
 {
 	this->hkey = hkey;
 	this->KeyArch = arch;
 }
-
 
 RegistryKey::~RegistryKey(void)
 {
@@ -15,7 +13,7 @@ RegistryKey::~RegistryKey(void)
 	RegCloseKey(this->hkey);
 }
 
-RegistryKey* RegistryKey::OpenSubKey64(wstring subkey)
+RegistryKey* RegistryKey::OpenSubKey64(std::wstring subkey)
 {
 	HKEY hKey;
 	if (RegOpenKeyEx(this->hkey, subkey.c_str(), 0, KEY_READ|KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
@@ -24,11 +22,11 @@ RegistryKey* RegistryKey::OpenSubKey64(wstring subkey)
 	}
 	else
 	{
-		return new RegistryKey(hKey, X64);
+		return new RegistryKey(hKey, Arch::X64);
 	}
 }
 
-RegistryKey* RegistryKey::OpenSubKey32(wstring subkey)
+RegistryKey* RegistryKey::OpenSubKey32(std::wstring subkey)
 {
 	HKEY hKey;
 	if (RegOpenKeyEx(this->hkey, subkey.c_str(), 0, KEY_READ|KEY_WOW64_32KEY, &hKey) != ERROR_SUCCESS)
@@ -37,11 +35,11 @@ RegistryKey* RegistryKey::OpenSubKey32(wstring subkey)
 	}
 	else
 	{
-		return new RegistryKey(hKey, X86);
+		return new RegistryKey(hKey, Arch::X86);
 	}
 }
 
-RegistryKey* RegistryKey::OpenSubKey(wstring subkey)
+RegistryKey* RegistryKey::OpenSubKey(std::wstring subkey)
 {
 	HKEY hKey;
 	if (RegOpenKeyEx(this->hkey, subkey.c_str(), 0, KEY_READ, &hKey) != ERROR_SUCCESS)
@@ -50,17 +48,17 @@ RegistryKey* RegistryKey::OpenSubKey(wstring subkey)
 	}
 	else
 	{
-		return new RegistryKey(hKey, UnKnown);
+		return new RegistryKey(hKey, Arch::UnKnown);
 	}
 }
 
-RegistryKey* RegistryKey::OpenSubKey(wstring subkey, Arch a)
+RegistryKey* RegistryKey::OpenSubKey(std::wstring subkey, Arch a)
 {
 	HKEY hKey;
 	DWORD FLAG;
-	if(a==X64)
+	if(a== Arch::X64)
 		FLAG = KEY_WOW64_64KEY;
-	else if(a==X86)
+	else if(a== Arch::X86)
 		FLAG = KEY_WOW64_32KEY;
 	else
 		FLAG = 0;
@@ -75,22 +73,21 @@ RegistryKey* RegistryKey::OpenSubKey(wstring subkey, Arch a)
 	}
 }
 
-
 RegistryKey& RegistryKey::HKLM()
 {
-	static RegistryKey Key(HKEY_LOCAL_MACHINE, UnKnown);
+	static RegistryKey Key(HKEY_LOCAL_MACHINE, Arch::UnKnown);
 	return Key;
 }
 
 RegistryKey& RegistryKey::HKU()
 {
-	static RegistryKey Key(HKEY_USERS, UnKnown);
+	static RegistryKey Key(HKEY_USERS, Arch::UnKnown);
 	return Key;
 }
 
-vector<wstring> RegistryKey::GetSubKeyNames()
+std::vector<std::wstring> RegistryKey::GetSubKeyNames()
 {
-	vector<wstring> ret;
+	std::vector<std::wstring> ret;
 	LONG lRet;
 	DWORD dwIndex = 0;
 	DWORD cbName = MAX_PATH;
@@ -99,7 +96,7 @@ vector<wstring> RegistryKey::GetSubKeyNames()
 	{
 		if(lRet == ERROR_SUCCESS)
 		{
-			ret.push_back(wstring(szSubKeyName));
+			ret.push_back(std::wstring(szSubKeyName));
 		}
 		cbName = MAX_PATH;
 		dwIndex++;
@@ -107,26 +104,39 @@ vector<wstring> RegistryKey::GetSubKeyNames()
 	return ret;
 }
 
-
-wstring RegistryKey::GetValue(wstring query)
+std::wstring RegistryKey::GetValue(std::wstring query)
 {
-	WCHAR Value[MAX_PATH];
-	DWORD dwSize = sizeof(Value);
+	WCHAR buffer[MAX_PATH];
+	DWORD dwSize = sizeof(buffer);
 	DWORD dwType;
-	if (RegQueryValueEx(this->hkey, query.c_str(), NULL, &dwType, (LPBYTE)&Value, &dwSize) == ERROR_SUCCESS)
+	if (RegQueryValueEx(this->hkey, query.c_str(), NULL, &dwType, (LPBYTE)&buffer, &dwSize) == ERROR_SUCCESS)
     {
 		if(dwType==REG_DWORD)
 		{
-			DWORD * ret = (DWORD*)Value;
-			return wstring(_itow((*ret),Value,10));
+			DWORD * ret = (DWORD*)buffer;
+			//std::wstring s = std::wstring(_itow((*ret), Value, 10));
+			errno_t rc = _itow_s(*ret, buffer, 255, 10);
+			if (rc != 0)
+			{
+				char b[255];
+				sprintf_s(b, 255, "GetValue() -> _itow_s returned %d", rc);
+			}
+
+			return std::wstring(buffer);
 		}
-		else if(dwType==REG_SZ)
-			return wstring(Value);
-		else if(dwType==REG_EXPAND_SZ)
+		else if (dwType == REG_SZ)
+		{
+			return std::wstring(buffer);
+		}
+		else if(dwType == REG_EXPAND_SZ)
 		{
 			WCHAR Expanded[MAX_PATH];
-			ExpandEnvironmentStrings(Value, Expanded, MAX_PATH);
-			return wstring(Expanded);
+			ExpandEnvironmentStrings(buffer, Expanded, MAX_PATH);
+			return std::wstring(Expanded);
+		}
+		else
+		{
+			return std::wstring(buffer);
 		}
     }
 	else

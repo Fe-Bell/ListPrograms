@@ -1,19 +1,18 @@
 #ifndef INSTALLED_PROGRAMS
 #define INSTALLED_PROGRAMS
+
 #include <vector>
-#include <Windows.h>
 #include "RegistryKey.h"
-using namespace std;
 
 class Software
 {
 public:
-	wstring DisplayName;
-	wstring InstallLocation;
-	wstring Version;
+	std::wstring DisplayName;
+	std::wstring InstallLocation;
+	std::wstring Version;
 	Arch Architecture; // 32 or 64
-	wstring Icon;
-	Software(wstring, wstring, wstring, wstring, Arch);
+	std::wstring Icon;
+	Software(std::wstring, std::wstring, std::wstring, std::wstring, Arch);
 };
 
 
@@ -22,11 +21,11 @@ class InstalledPrograms
 public:
 	InstalledPrograms(void);
 	~InstalledPrograms(void);
-	static vector<Software>* GetInstalledPrograms(bool IncludeUpdates);
+	static std::vector<Software>* GetInstalledPrograms(bool IncludeUpdates);
 private:
-	static vector<Software>* GetInstalledProgramsImp(bool IncludeUpdates);
-	static vector<Software>* GetUninstallKeyPrograms(RegistryKey* UninstallKey, RegistryKey* ClassesKey, vector<Software>*, bool IncludeUpdates);
-	static vector<Software>* GetUserInstallerKeyPrograms(RegistryKey* uInstallerKey, vector<Software>* ExistingProgramList);
+	static std::vector<Software>* GetInstalledProgramsImp(bool IncludeUpdates);
+	static std::vector<Software>* GetUninstallKeyPrograms(RegistryKey* UninstallKey, RegistryKey* ClassesKey, std::vector<Software>*, bool IncludeUpdates);
+	static std::vector<Software>* GetUserInstallerKeyPrograms(RegistryKey* uInstallerKey, std::vector<Software>* ExistingProgramList);
 };
 
 #endif

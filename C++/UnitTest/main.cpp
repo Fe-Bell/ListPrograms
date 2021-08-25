@@ -1,13 +1,12 @@
 #include <iostream>
 #include "InstalledPrograms.h"
-
-using namespace std;
+#include <vector>
 
 int main()
 {
-	vector<Software>* list = InstalledPrograms::GetInstalledPrograms(false);
-	for(vector<Software>::iterator iter = list->begin(); iter!=list->end(); iter++)
+	std::vector<Software>* list = InstalledPrograms::GetInstalledPrograms(false);
+	for(std::vector<Software>::iterator iter = list->begin(); iter!=list->end(); iter++)
 	{
-		wcout<<iter->DisplayName<<L"  "<<iter->InstallLocation<<L"  "<<iter->Version<<L"  "<<iter->Icon<<L"  "<<iter->Architecture<<endl;
+		std::wcout << iter->DisplayName << L"  " << iter->InstallLocation << L"  " << iter->Version << L"  " << iter->Icon << L"  " << (int)iter->Architecture << std::endl;
 	}
 }
