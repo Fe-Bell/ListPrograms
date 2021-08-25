@@ -5,13 +5,7 @@
 #define VC_EXTRALEAN
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-
-static std::wstring GetInstallerKeyNameFromGuid(std::wstring GuidName);
-static void AddToList(std::vector<Software>* TheList, Software software);
-
-Software::Software(std::wstring name, std::wstring version, std::wstring location, std::wstring icon, Arch arch): DisplayName(name), Version(version), InstallLocation(location), Icon(icon), Architecture(arch)
-{
-}
+#include "Util.h"
 
 InstalledPrograms::InstalledPrograms(void)
 {
@@ -21,12 +15,12 @@ InstalledPrograms::~InstalledPrograms(void)
 {
 }
 
-std::vector<Software>* InstalledPrograms::GetInstalledPrograms(bool IncludeUpdates)
+std::vector<Software>* InstalledPrograms::GetInstalledPrograms(const bool& IncludeUpdates)
 {
 	return GetInstalledProgramsImp(IncludeUpdates);
 }
 
-std::vector<Software>* InstalledPrograms::GetInstalledProgramsImp(bool IncludeUpdates)
+std::vector<Software>* InstalledPrograms::GetInstalledProgramsImp(const bool& IncludeUpdates)
 {
     std::vector<Software>* SoftwareList = new std::vector<Software>();
 	
@@ -103,7 +97,7 @@ std::vector<Software>* InstalledPrograms::GetUserInstallerKeyPrograms(RegistryKe
 					continue;
 				}
 			
-				RegistryKey * ProductsKey = RegistryKey::HKLM().OpenSubKey(std::wstring(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData\\").append(*userdatait).append(L"\\Products"), Arch::UnKnown);
+				RegistryKey * ProductsKey = RegistryKey::HKLM().OpenSubKey(std::wstring(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData\\").append(*userdatait).append(L"\\Products"), Arch_e::UnKnown);
                 
 				if ((ProductsKey != NULL)) 
 				{
@@ -112,7 +106,7 @@ std::vector<Software>* InstalledPrograms::GetUserInstallerKeyPrograms(RegistryKe
 					{
 						if (productit->compare(*it)==0) 
 						{	
-							RegistryKey * UserDataProgramKey = RegistryKey::HKLM().OpenSubKey(std::wstring(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData\\").append(*userdatait).append(L"\\Products\\").append(*productit).append(L"\\InstallProperties"), Arch::UnKnown);
+							RegistryKey * UserDataProgramKey = RegistryKey::HKLM().OpenSubKey(std::wstring(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData\\").append(*userdatait).append(L"\\Products\\").append(*productit).append(L"\\InstallProperties"), Arch_e::UnKnown);
 							if(UserDataProgramKey!=NULL)
 							{
 								if ( UserDataProgramKey->GetValue(L"SystemComponent").compare(L"")==0 || _wtoi(UserDataProgramKey->GetValue(L"SystemComponent").c_str())!=1 ) 
@@ -145,7 +139,7 @@ std::vector<Software>* InstalledPrograms::GetUserInstallerKeyPrograms(RegistryKe
 
 									if ( Name.compare(L"")!=0 ) 
 									{
-										AddToList(ExistingProgramList, Software(Name,ProgVersion,InstallLocation,Icon,UserData->KeyArch));
+										Util::AddToList(ExistingProgramList, Software(Name,ProgVersion,InstallLocation,Icon,UserData->KeyArch));
 										ProductFound = true;
 									}
 									delete temp;
@@ -168,7 +162,7 @@ std::vector<Software>* InstalledPrograms::GetUserInstallerKeyPrograms(RegistryKe
     return ExistingProgramList;
 }
 
-std::vector<Software>* InstalledPrograms::GetUninstallKeyPrograms(RegistryKey* UninstallKey, RegistryKey* ClassesKey, std::vector<Software>* ExistingProgramList, bool IncludeUpdates)
+std::vector<Software>* InstalledPrograms::GetUninstallKeyPrograms(RegistryKey* UninstallKey, RegistryKey* ClassesKey, std::vector<Software>* ExistingProgramList, const bool& IncludeUpdates)
 {
     //Make sure the key exists
     if (UninstallKey != NULL)
@@ -219,7 +213,7 @@ std::vector<Software>* InstalledPrograms::GetUninstallKeyPrograms(RegistryKey* U
                             //Add the program to our list if we are including updates in this search
                             if ( Name.compare(L"")!=0 ) 
 							{
-                                AddToList(ExistingProgramList, Software(Name,ProgVersion,InstallLocation,Icon,UninstallKey->KeyArch));
+								Util::AddToList(ExistingProgramList, Software(Name,ProgVersion,InstallLocation,Icon,UninstallKey->KeyArch));
                             }
                         }
                     } 
@@ -230,7 +224,7 @@ std::vector<Software>* InstalledPrograms::GetUninstallKeyPrograms(RegistryKey* U
 						{
                             if ( Name.compare(L"")!=0 ) 
 							{
-								AddToList(ExistingProgramList, Software(Name,ProgVersion,InstallLocation,Icon,UninstallKey->KeyArch));
+								Util::AddToList(ExistingProgramList, Software(Name,ProgVersion,InstallLocation,Icon,UninstallKey->KeyArch));
                             }
                         }
                     }
@@ -242,7 +236,7 @@ std::vector<Software>* InstalledPrograms::GetUninstallKeyPrograms(RegistryKey* U
                     // Name
 					std::wstring Name1 = L"";
 					std::wstring  Icon1 = L"";
-                    std::wstring MsiKeyName = GetInstallerKeyNameFromGuid(*SubKeyName);
+                    std::wstring MsiKeyName = Util::GetInstallerKeyNameFromGuid(*SubKeyName);
 					RegistryKey * CrGuidKey = ClassesKey->OpenSubKey(MsiKeyName,ClassesKey->KeyArch);
                     if (CrGuidKey != NULL)
 					{
@@ -274,149 +268,11 @@ std::vector<Software>* InstalledPrograms::GetUninstallKeyPrograms(RegistryKey* U
 
 					if (Name.compare(L"")!=0)
 					{
-                        AddToList(ExistingProgramList, Software(Name,ProgVersion,InstallLocation,Icon,UninstallKey->KeyArch));
+						Util::AddToList(ExistingProgramList, Software(Name,ProgVersion,InstallLocation,Icon,UninstallKey->KeyArch));
                     }
                 }
             }
         }
     }
     return ExistingProgramList;
-}
-
-// Util Functions
-
-static void AddToList(std::vector<Software>* TheList, Software software)
-{
-	int index = -1;
-	for(size_t i = 0; i<TheList->size(); i++)
-	{
-		if(TheList->at(i).DisplayName.compare(software.DisplayName)==0)
-		{
-			index = i;
-			break;
-		}
-	}
-	if(index == -1)
-		TheList->push_back(software);
-	else
-	{
-		Software duplicate = TheList->at(index);
-		
-		// Merge Architecture
-		if( software.Architecture!=Arch::UnKnown && duplicate.Architecture!= Arch::UnKnown && duplicate.Architecture!=software.Architecture )
-		{
-			TheList->push_back(software);
-			return;
-		}
-		else
-		{
-			if(software.Architecture== Arch::UnKnown)
-				software.Architecture = duplicate.Architecture;
-		}
-
-		// Merge Icon
-		if(software.Icon.compare(L"")!=0 && duplicate.Icon.compare(L"")!=0 && software.Icon.compare(duplicate.Icon)!=0)
-		{
-			TheList->push_back(software);
-			return;
-		}
-		else
-		{
-			if(software.Icon.compare(L"")==0)
-				software.Icon = duplicate.Icon;
-		}
-
-		// Merge Location
-		if(software.InstallLocation.compare(L"")!=0 && duplicate.InstallLocation.compare(L"")!=0 && software.InstallLocation.compare(duplicate.InstallLocation)!=0)
-		{
-			TheList->push_back(software);
-			return;
-		}
-		else
-		{
-			if(software.InstallLocation.compare(L"")==0)
-				software.InstallLocation = duplicate.InstallLocation;
-		}
-
-		// Merge Version
-		if(software.Version.compare(L"")!=0 && duplicate.Version.compare(L"")!=0 && software.Version.compare(duplicate.Version)!=0)
-		{
-			TheList->push_back(software);
-			return;
-		}
-		else
-		{
-			if(software.Version.compare(L"")==0)
-				software.Version = duplicate.Version;
-		}
-		TheList->erase(TheList->begin()+index);
-		TheList->push_back(software);
-	}
-}
-
-static std::wstring ReverseString(std::wstring input);
-static void replaceAll(std::wstring& str, const std::wstring& from, const std::wstring& to);
-static std::vector<std::wstring> split( const std::wstring& text, wchar_t delimiter );
-
-static std::wstring GetInstallerKeyNameFromGuid(std::wstring GuidName)
-{
-	replaceAll(GuidName, L"{", L"");
-	replaceAll(GuidName, L"}", L"");
-	std::vector<std::wstring> MsiNameParts = split(GuidName, L'-');
-    std::wstring MsiName;
-    //Just reverse the first 3 parts
-    for (int i = 0; i <= 2; i++) {
-        MsiName.append(ReverseString(MsiNameParts[i]));
-    }
-    //For the last 2 parts, reverse each character pair
-    for (int j = 3; j <= 4; j++)
-	{
-        for (size_t i = 0; i <= MsiNameParts[j].length() - 1; i++) 
-		{
-            MsiName.append(std::wstring(1,MsiNameParts[j].c_str()[i + 1]));
-            MsiName.append(std::wstring(1,MsiNameParts[j].c_str()[i]));
-            i += 1;
-        }
-    }
-    return MsiName;
-}
-
-static std::wstring ReverseString(std::wstring input)
-{
-	std::reverse(input.begin(), input.end());
-	return input;
-}
-
-static void replaceAll(std::wstring& str, const std::wstring& from, const std::wstring& to) 
-{
-    if(from.empty())
-        return;
-    size_t start_pos = 0;
-    while((start_pos = str.find(from, start_pos)) != std::wstring::npos) 
-	{
-        str.replace(start_pos, from.length(), to);
-        start_pos += to.length();
-    }
-}
-
-static std::vector<std::wstring> split( const std::wstring& text, wchar_t delimiter )
-{
-    std::vector<std::wstring> result;
- 
-    std::wstring::size_type start = 0;
-    std::wstring::size_type end   = text.find( delimiter, start );
- 
-    while( end != std::wstring::npos )
-    {
-        std::wstring token = text.substr( start, end - start );
- 
-        result.push_back( token );
- 
-        start = end + 1;
-        end   = text.find( delimiter, start );
-    }
- 
-    result.push_back( text.substr( start ) );
- 
-    return result;
 }

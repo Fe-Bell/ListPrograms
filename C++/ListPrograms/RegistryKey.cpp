@@ -1,6 +1,6 @@
 #include "RegistryKey.h"
 
-RegistryKey::RegistryKey(HKEY hkey, Arch arch)
+RegistryKey::RegistryKey(HKEY hkey, Arch_e arch)
 {
 	this->hkey = hkey;
 	this->KeyArch = arch;
@@ -22,7 +22,7 @@ RegistryKey* RegistryKey::OpenSubKey64(std::wstring subkey)
 	}
 	else
 	{
-		return new RegistryKey(hKey, Arch::X64);
+		return new RegistryKey(hKey, Arch_e::X64);
 	}
 }
 
@@ -35,7 +35,7 @@ RegistryKey* RegistryKey::OpenSubKey32(std::wstring subkey)
 	}
 	else
 	{
-		return new RegistryKey(hKey, Arch::X86);
+		return new RegistryKey(hKey, Arch_e::X86);
 	}
 }
 
@@ -48,17 +48,17 @@ RegistryKey* RegistryKey::OpenSubKey(std::wstring subkey)
 	}
 	else
 	{
-		return new RegistryKey(hKey, Arch::UnKnown);
+		return new RegistryKey(hKey, Arch_e::UnKnown);
 	}
 }
 
-RegistryKey* RegistryKey::OpenSubKey(std::wstring subkey, Arch a)
+RegistryKey* RegistryKey::OpenSubKey(std::wstring subkey, Arch_e a)
 {
 	HKEY hKey;
 	DWORD FLAG;
-	if(a== Arch::X64)
+	if(a== Arch_e::X64)
 		FLAG = KEY_WOW64_64KEY;
-	else if(a== Arch::X86)
+	else if(a== Arch_e::X86)
 		FLAG = KEY_WOW64_32KEY;
 	else
 		FLAG = 0;
@@ -75,13 +75,13 @@ RegistryKey* RegistryKey::OpenSubKey(std::wstring subkey, Arch a)
 
 RegistryKey& RegistryKey::HKLM()
 {
-	static RegistryKey Key(HKEY_LOCAL_MACHINE, Arch::UnKnown);
+	static RegistryKey Key(HKEY_LOCAL_MACHINE, Arch_e::UnKnown);
 	return Key;
 }
 
 RegistryKey& RegistryKey::HKU()
 {
-	static RegistryKey Key(HKEY_USERS, Arch::UnKnown);
+	static RegistryKey Key(HKEY_USERS, Arch_e::UnKnown);
 	return Key;
 }
 

@@ -163,13 +163,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Architecture.h" />
     <ClInclude Include="InstalledPrograms.h" />
     <ClInclude Include="RegistryKey.h" />
+    <ClInclude Include="Software.h" />
+    <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="InstalledPrograms.cpp" />
     <ClCompile Include="ListPrograms.cpp" />
     <ClCompile Include="RegistryKey.cpp" />
+    <ClCompile Include="Software.cpp" />
+    <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
