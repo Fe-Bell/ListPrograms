@@ -161,3 +161,6 @@ pip-log.txt
 
 # Mac crap
 .DS_Store
+/C++/.vs/ListPrograms/v16
+/.vs/ListPrograms/v16
+/.vs
