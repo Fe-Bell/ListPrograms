@@ -22,16 +22,16 @@ void InstalledPrograms::GetInstalledPrograms(std::vector<Software>& v, const boo
 
 void InstalledPrograms::GetInstalledProgramsImp(std::vector<Software>& v, const bool& IncludeUpdates)
 {
-	RegistryKey* ClassesKey = RegistryKey::HKLM().OpenSubKey(L"Software\\Classes\\Installer\\Products");
+	RegistryKey* classesKey = RegistryKey::HKLM().OpenSubKey(L"Software\\Classes\\Installer\\Products");
 
 	// The Classes\\Installer\\Products key is shared 
 	// Documentation Here http://msdn.microsoft.com/en-us/library/windows/desktop/aa384253(v=vs.85).aspx
 
-	RegistryKey* Wow64UninstallKey = RegistryKey::HKLM().OpenSubKey32(L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall");
-	GetUninstallKeyPrograms(v, Wow64UninstallKey, ClassesKey, IncludeUpdates);
+	RegistryKey* wow64UninstallKey = RegistryKey::HKLM().OpenSubKey32(L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall");
+	GetUninstallKeyPrograms(v, wow64UninstallKey, classesKey, IncludeUpdates);
 
-	RegistryKey* UninstallKey = RegistryKey::HKLM().OpenSubKey64(L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall");
-	GetUninstallKeyPrograms(v, UninstallKey, ClassesKey, IncludeUpdates);
+	RegistryKey* uninstallKey = RegistryKey::HKLM().OpenSubKey64(L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall");
+	GetUninstallKeyPrograms(v, uninstallKey, classesKey, IncludeUpdates);
 
 	std::vector<std::wstring> subkeys = RegistryKey::HKU().GetSubKeyNames();
 	
@@ -42,7 +42,7 @@ void InstalledPrograms::GetInstalledProgramsImp(std::vector<Software>& v, const 
 
 		std::wstring uninstallsubs = (*it) + L"\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
 		RegistryKey* UninstallKey = RegistryKey::HKU().OpenSubKey(uninstallsubs);
-		GetUninstallKeyPrograms(v, UninstallKey, ClassesKey, IncludeUpdates);
+		GetUninstallKeyPrograms(v, UninstallKey, classesKey, IncludeUpdates);
 		if(UninstallKey)
 			delete UninstallKey;
 
@@ -53,14 +53,18 @@ void InstalledPrograms::GetInstalledProgramsImp(std::vector<Software>& v, const 
 			delete InstallerKey;
 	}
 
-	if(UninstallKey)
-		delete UninstallKey;
-	if(Wow64UninstallKey)
-		delete Wow64UninstallKey;
-	if(ClassesKey)
-		delete ClassesKey;
-	std::sort(v.begin(), v.end(), [](Software s1, Software s2)->bool{std::transform(s1.DisplayName.begin(), s1.DisplayName.end(), s1.DisplayName.begin(), ::tolower);std::transform(s2.DisplayName.begin(), s2.DisplayName.end(), s2.DisplayName.begin(), ::tolower);return s1.DisplayName.compare(s2.DisplayName)<0;} );
-	
+	if(uninstallKey)
+		delete uninstallKey;
+	if(wow64UninstallKey)
+		delete wow64UninstallKey;
+	if(classesKey)
+		delete classesKey;
+	std::sort(v.begin(), v.end(), [](Software& s1, Software& s2)->bool
+		{
+			std::transform(s1.DisplayName.begin(), s1.DisplayName.end(), s1.DisplayName.begin(), ::tolower);
+			std::transform(s2.DisplayName.begin(), s2.DisplayName.end(), s2.DisplayName.begin(), ::tolower);
+			return s1.DisplayName.compare(s2.DisplayName) < 0;
+		});	
 }
 
 void InstalledPrograms::GetUserInstallerKeyPrograms(std::vector<Software>& v, RegistryKey* uInstallerKey)
@@ -68,25 +72,24 @@ void InstalledPrograms::GetUserInstallerKeyPrograms(std::vector<Software>& v, Re
 	if(uInstallerKey==NULL)
 		return;
 
-	RegistryKey * UserData32 = RegistryKey::HKLM().OpenSubKey32(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData");
-	RegistryKey * UserData64 = RegistryKey::HKLM().OpenSubKey64(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData");
+	RegistryKey * userData32 = RegistryKey::HKLM().OpenSubKey32(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData");
+	RegistryKey * userData64 = RegistryKey::HKLM().OpenSubKey64(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData");
 
-	if(UserData32==NULL && UserData64==NULL)
+	if(userData32==NULL && userData64==NULL)
 		return;
 
-
-	RegistryKey* UserDatas[2] = {UserData32, UserData64};
+	RegistryKey* userDatas[2] = {userData32, userData64};
 	for(int two = 0; two < 2; two++)
 	{
-		RegistryKey * UserData = UserDatas[two];
-		if(UserData==NULL)
+		RegistryKey * userData = userDatas[two];
+		if(userData==NULL)
 			continue;
 
 		std::vector<std::wstring> subkeys = uInstallerKey->GetSubKeyNames();
 		for(std::vector<std::wstring>::iterator it = subkeys.begin(); it!=subkeys.end(); it++)
 		{
-			std::vector<std::wstring> userDataSubKeys = UserData->GetSubKeyNames();
-			bool ProductFound = false;
+			std::vector<std::wstring> userDataSubKeys = userData->GetSubKeyNames();
+			bool isProductFound = false;
 			for(std::vector<std::wstring>::iterator userdatait = userDataSubKeys.begin(); userdatait!=userDataSubKeys.end(); userdatait++) 
 			{
 				//Ignore the LocalSystem account
@@ -94,67 +97,68 @@ void InstalledPrograms::GetUserInstallerKeyPrograms(std::vector<Software>& v, Re
 					continue;
 				}
 			
-				RegistryKey * ProductsKey = RegistryKey::HKLM().OpenSubKey(std::wstring(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData\\").append(*userdatait).append(L"\\Products"), Arch_e::UnKnown);
+				RegistryKey * productsKey = RegistryKey::HKLM().OpenSubKey(std::wstring(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData\\").append(*userdatait).append(L"\\Products"), Arch_e::UnKnown);
                 
-				if ((ProductsKey != NULL)) 
+				if ((productsKey != NULL)) 
 				{
-					std::vector<std::wstring> LmProductGuids = ProductsKey->GetSubKeyNames();
-					for(std::vector<std::wstring>::iterator productit = LmProductGuids.begin(); productit!=LmProductGuids.end(); productit++) 
+					std::vector<std::wstring> lmProductGuids = productsKey->GetSubKeyNames();
+					for(std::vector<std::wstring>::iterator productit = lmProductGuids.begin(); productit!=lmProductGuids.end(); productit++) 
 					{
 						if (productit->compare(*it)==0) 
 						{	
-							RegistryKey * UserDataProgramKey = RegistryKey::HKLM().OpenSubKey(std::wstring(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData\\").append(*userdatait).append(L"\\Products\\").append(*productit).append(L"\\InstallProperties"), Arch_e::UnKnown);
-							if(UserDataProgramKey!=NULL)
+							RegistryKey * userDataProgramKey = RegistryKey::HKLM().OpenSubKey(std::wstring(L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\UserData\\").append(*userdatait).append(L"\\Products\\").append(*productit).append(L"\\InstallProperties"), Arch_e::UnKnown);
+							if(userDataProgramKey!=NULL)
 							{
-								if ( UserDataProgramKey->GetValue(L"SystemComponent").compare(L"")==0 || _wtoi(UserDataProgramKey->GetValue(L"SystemComponent").c_str())!=1 ) 
+								if ( userDataProgramKey->GetValue(L"SystemComponent").compare(L"")==0 || _wtoi(userDataProgramKey->GetValue(L"SystemComponent").c_str())!=1 ) 
 								{
 									RegistryKey * temp = uInstallerKey->OpenSubKey(*it, uInstallerKey->KeyArch);
 
 									// Name 
-									std::wstring Name1 = temp->GetValue(L"ProductName");
-									std::wstring Name2 = UserDataProgramKey->GetValue(L"DisplayName");
-									std::wstring Name = L"";
-									if(Name1.compare(L"")==0)
-										Name = Name2;
+									std::wstring name1 = temp->GetValue(L"ProductName");
+									std::wstring name2 = userDataProgramKey->GetValue(L"DisplayName");
+									std::wstring name = L"";
+									if(name1.compare(L"")==0)
+										name = name2;
 									else
-										Name = Name1;
+										name = name1;
 
 									// Version
-									std::wstring ProgVersion = UserDataProgramKey->GetValue(L"DisplayVersion");
+									std::wstring progVersion = userDataProgramKey->GetValue(L"DisplayVersion");
 
 									// InstallLocation
-									std::wstring InstallLocation = UserDataProgramKey->GetValue(L"InstallLocation");
+									std::wstring installLocation = userDataProgramKey->GetValue(L"InstallLocation");
 
 									// Icon
-									std::wstring Icon1 = temp->GetValue(L"ProductIcon");
-									std::wstring Icon2 = UserDataProgramKey->GetValue(L"DisplayIcon");
-									std::wstring Icon = L"";
-									if(Icon1.compare(L"")==0)
-										Icon = Icon2;
+									std::wstring icon1 = temp->GetValue(L"ProductIcon");
+									std::wstring icon2 = userDataProgramKey->GetValue(L"DisplayIcon");
+									std::wstring icon = L"";
+									if(icon1.compare(L"")==0)
+										icon = icon2;
 									else
-										Icon = Icon1;
+										icon = icon1;
 
-									if ( Name.compare(L"")!=0 ) 
+									if ( name.compare(L"")!=0 ) 
 									{
-										Util::AddToList(v, Software(Name,ProgVersion,InstallLocation,Icon,UserData->KeyArch));
-										ProductFound = true;
+										auto sw = Software(name, progVersion, installLocation, icon, userData->KeyArch);
+										Util::AddToList(v, sw);
+										isProductFound = true;
 									}
 									delete temp;
 								}
-								delete UserDataProgramKey;
+								delete userDataProgramKey;
 							}
 							break;
 						}
 					}
-					if(ProductFound) 
+					if(isProductFound) 
 					{
 						break; // TODO: might not be correct. Was : Exit For
 					}
-					delete ProductsKey;
+					delete productsKey;
 				}
 			}
 		}
-		delete UserData;
+		delete userData;
 	}
 }
 
@@ -164,63 +168,65 @@ void InstalledPrograms::GetUninstallKeyPrograms(std::vector<Software>& v, Regist
     if (UninstallKey != NULL)
 	{
         //Loop through all subkeys (each one represents an installed program)
-		std::vector<std::wstring> UninstallSubKeys = UninstallKey->GetSubKeyNames();
-		for(std::vector<std::wstring>::iterator SubKeyName = UninstallSubKeys.begin(); SubKeyName!=UninstallSubKeys.end(); SubKeyName++) 
+		std::vector<std::wstring> uninstallSubKeys = UninstallKey->GetSubKeyNames();
+		for(std::vector<std::wstring>::iterator subKeyName = uninstallSubKeys.begin(); subKeyName!=uninstallSubKeys.end(); subKeyName++) 
 		{
-			RegistryKey * CurrentSubKey = UninstallKey->OpenSubKey(*SubKeyName, UninstallKey->KeyArch);
-			if (CurrentSubKey == NULL)
+			RegistryKey * currentSubKey = UninstallKey->OpenSubKey(*subKeyName, UninstallKey->KeyArch);
+			if (currentSubKey == NULL)
 				continue;
 
-            int IsSystemComponent = 1;
-            bool ErrorCheckingSystemComponent = false;
+            int isSystemComponent = 1;
+            bool errorCheckingSystemComponent = false;
             
-			std::wstring issystemcomponent = CurrentSubKey->GetValue(L"SystemComponent");
+			std::wstring issystemcomponent = currentSubKey->GetValue(L"SystemComponent");
 			if( issystemcomponent.compare(L"")==0 || _wtoi(issystemcomponent.c_str())!=1 )
-				IsSystemComponent = 0;
+				isSystemComponent = 0;
             
-            if (IsSystemComponent != 1) 
+            if (isSystemComponent != 1) 
 			{
                 //If the WindowsInstaller flag is set then add the key name to our list of Windows Installer GUIDs
-                if (CurrentSubKey->GetValue(L"WindowsInstaller").compare(L"")==0 || _wtoi(CurrentSubKey->GetValue(L"WindowsInstaller").c_str())!= 1) 
+                if (currentSubKey->GetValue(L"WindowsInstaller").compare(L"")==0 || _wtoi(currentSubKey->GetValue(L"WindowsInstaller").c_str())!= 1) 
 				{
-                    std::wregex WindowsUpdateRegEx(L"KB[0-9]{6}$");
+                    std::wregex windowsUpdateRegEx(L"KB[0-9]{6}$");
                     
 					// Release Type
-					std::wstring ProgramReleaseType = CurrentSubKey->GetValue(L"ReleaseType");
+					std::wstring programReleaseType = currentSubKey->GetValue(L"ReleaseType");
 
 					// Version
-                    std::wstring ProgVersion = CurrentSubKey->GetValue(L"DisplayVersion");
+                    std::wstring progVersion = currentSubKey->GetValue(L"DisplayVersion");
 					// Name 
-					std::wstring Name = CurrentSubKey->GetValue(L"DisplayName");
+					std::wstring name = currentSubKey->GetValue(L"DisplayName");
 					// InstallLocation
-					std::wstring InstallLocation = CurrentSubKey->GetValue(L"InstallLocation");
+					std::wstring installLocation = currentSubKey->GetValue(L"InstallLocation");
                     // Icon
-					std::wstring Icon = CurrentSubKey->GetValue(L"DisplayIcon");
+					std::wstring icon = currentSubKey->GetValue(L"DisplayIcon");
 
 					//Check to see if this program is classed as an update
-					if (regex_match(*SubKeyName, WindowsUpdateRegEx) == true || \
-						CurrentSubKey->GetValue(L"ParentKeyName").compare(L"") != 0 ||\
-						ProgramReleaseType.compare(L"Security Update")==0 ||\
-						ProgramReleaseType.compare(L"Update Rollup")==0 ||\
-						ProgramReleaseType.compare(L"Hotfix")==0 )
+					if (regex_match(*subKeyName, windowsUpdateRegEx) == true || \
+						currentSubKey->GetValue(L"ParentKeyName").compare(L"") != 0 ||\
+						programReleaseType.compare(L"Security Update")==0 ||\
+						programReleaseType.compare(L"Update Rollup")==0 ||\
+						programReleaseType.compare(L"Hotfix")==0 )
 					{
                         if (IncludeUpdates) 
 						{
                             //Add the program to our list if we are including updates in this search
-                            if ( Name.compare(L"")!=0 ) 
+                            if ( name.compare(L"")!=0 ) 
 							{
-								Util::AddToList(v, Software(Name,ProgVersion,InstallLocation,Icon,UninstallKey->KeyArch));
+								Software sw = Software(name, progVersion, installLocation, icon, UninstallKey->KeyArch);
+								Util::AddToList(v, sw);
                             }
                         }
                     } 
 					else 
 					{
-						std::wstring uninstallvalue = CurrentSubKey->GetValue(L"UninstallString");
+						std::wstring uninstallvalue = currentSubKey->GetValue(L"UninstallString");
 						if (uninstallvalue.compare(L"")!=0) 
 						{
-                            if ( Name.compare(L"")!=0 ) 
+                            if ( name.compare(L"")!=0 ) 
 							{
-								Util::AddToList(v, Software(Name,ProgVersion,InstallLocation,Icon,UninstallKey->KeyArch));
+								Software sw = Software(name, progVersion, installLocation, icon, UninstallKey->KeyArch);
+								Util::AddToList(v, sw);
                             }
                         }
                     }
@@ -230,41 +236,42 @@ void InstalledPrograms::GetUninstallKeyPrograms(std::vector<Software>& v, Regist
 				else 
 				{
                     // Name
-					std::wstring Name1 = L"";
-					std::wstring  Icon1 = L"";
-                    std::wstring MsiKeyName = Util::GetInstallerKeyNameFromGuid(*SubKeyName);
-					RegistryKey * CrGuidKey = ClassesKey->OpenSubKey(MsiKeyName,ClassesKey->KeyArch);
-                    if (CrGuidKey != NULL)
+					std::wstring name1 = L"";
+					std::wstring icon1 = L"";
+                    std::wstring msiKeyName = Util::GetInstallerKeyNameFromGuid(*subKeyName);
+					RegistryKey * crGuidKey = ClassesKey->OpenSubKey(msiKeyName,ClassesKey->KeyArch);
+                    if (crGuidKey != NULL)
 					{
-                        Name1 = CrGuidKey->GetValue(L"ProductName");
-						Icon1 = CrGuidKey->GetValue(L"ProductIcon");
-						delete CrGuidKey;
+                        name1 = crGuidKey->GetValue(L"ProductName");
+						icon1 = crGuidKey->GetValue(L"ProductIcon");
+						delete crGuidKey;
                     }
-					std::wstring Name2 = CurrentSubKey->GetValue(L"DisplayName");
-					std::wstring Name = L"";
-					if(Name1.compare(L"")==0)
-						Name = Name2;
+
+					std::wstring name2 = currentSubKey->GetValue(L"DisplayName");
+					std::wstring name = L"";
+					if(name1.compare(L"")==0)
+						name = name2;
 					else
-						Name = Name1;
+						name = name1;
 
                     // Version
-					std::wstring ProgVersion = CurrentSubKey->GetValue(L"DisplayVersion");
+					std::wstring progVersion = currentSubKey->GetValue(L"DisplayVersion");
                     
-
 					// InstallLocation
-					std::wstring InstallLocation = CurrentSubKey->GetValue(L"InstallLocation");
+					std::wstring installLocation = currentSubKey->GetValue(L"InstallLocation");
 
 					// Icon
-					std::wstring Icon2 = CurrentSubKey->GetValue(L"DisplayIcon");
-					std::wstring Icon = L"";
-					if(Icon1.compare(L"")==0)
-						Icon = Icon2;
+					std::wstring icon2 = currentSubKey->GetValue(L"DisplayIcon");
+					std::wstring icon = L"";
+					if(icon1.compare(L"")==0)
+						icon = icon2;
 					else
-						Icon = Icon1;
+						icon = icon1;
 
-					if (Name.compare(L"")!=0)
+					if (name.compare(L"")!=0)
 					{
-						Util::AddToList(v, Software(Name,ProgVersion,InstallLocation,Icon,UninstallKey->KeyArch));
+						Software sw = Software(name, progVersion, installLocation, icon, UninstallKey->KeyArch);
+						Util::AddToList(v, sw);
                     }
                 }
             }

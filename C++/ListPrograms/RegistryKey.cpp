@@ -1,19 +1,20 @@
 #include "RegistryKey.h"
 
-RegistryKey::RegistryKey(HKEY hkey, Arch_e arch)
+RegistryKey::RegistryKey(HKEY hkey, const Arch_e& arch)
 {
 	this->hkey = hkey;
 	this->KeyArch = arch;
 }
 
-RegistryKey::~RegistryKey(void)
+RegistryKey::~RegistryKey()
 {
-	if( this->hkey == HKEY_LOCAL_MACHINE || this->hkey == HKEY_USERS )
+	if(this->hkey == HKEY_LOCAL_MACHINE || this->hkey == HKEY_USERS)
 		return;
-	RegCloseKey(this->hkey);
+
+	LSTATUS status = RegCloseKey(this->hkey);
 }
 
-RegistryKey* RegistryKey::OpenSubKey64(std::wstring subkey)
+RegistryKey* RegistryKey::OpenSubKey64(const std::wstring& subkey)
 {
 	HKEY hKey;
 	if (RegOpenKeyEx(this->hkey, subkey.c_str(), 0, KEY_READ|KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
@@ -26,7 +27,7 @@ RegistryKey* RegistryKey::OpenSubKey64(std::wstring subkey)
 	}
 }
 
-RegistryKey* RegistryKey::OpenSubKey32(std::wstring subkey)
+RegistryKey* RegistryKey::OpenSubKey32(const std::wstring& subkey)
 {
 	HKEY hKey;
 	if (RegOpenKeyEx(this->hkey, subkey.c_str(), 0, KEY_READ|KEY_WOW64_32KEY, &hKey) != ERROR_SUCCESS)
@@ -39,7 +40,7 @@ RegistryKey* RegistryKey::OpenSubKey32(std::wstring subkey)
 	}
 }
 
-RegistryKey* RegistryKey::OpenSubKey(std::wstring subkey)
+RegistryKey* RegistryKey::OpenSubKey(const std::wstring& subkey)
 {
 	HKEY hKey;
 	if (RegOpenKeyEx(this->hkey, subkey.c_str(), 0, KEY_READ, &hKey) != ERROR_SUCCESS)
@@ -52,7 +53,7 @@ RegistryKey* RegistryKey::OpenSubKey(std::wstring subkey)
 	}
 }
 
-RegistryKey* RegistryKey::OpenSubKey(std::wstring subkey, Arch_e a)
+RegistryKey* RegistryKey::OpenSubKey(const std::wstring& subkey, const Arch_e& a)
 {
 	HKEY hKey;
 	DWORD FLAG;
@@ -92,7 +93,7 @@ std::vector<std::wstring> RegistryKey::GetSubKeyNames()
 	DWORD dwIndex = 0;
 	DWORD cbName = MAX_PATH;
 	WCHAR szSubKeyName[MAX_PATH];
-	while( (lRet = RegEnumKeyEx(this->hkey, dwIndex, szSubKeyName, &cbName, NULL,NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS )
+	while((lRet = RegEnumKeyEx(this->hkey, dwIndex, szSubKeyName, &cbName, NULL,NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS )
 	{
 		if(lRet == ERROR_SUCCESS)
 		{
@@ -104,7 +105,7 @@ std::vector<std::wstring> RegistryKey::GetSubKeyNames()
 	return ret;
 }
 
-std::wstring RegistryKey::GetValue(std::wstring query)
+std::wstring RegistryKey::GetValue(const std::wstring& query)
 {
 	WCHAR buffer[MAX_PATH];
 	DWORD dwSize = sizeof(buffer);

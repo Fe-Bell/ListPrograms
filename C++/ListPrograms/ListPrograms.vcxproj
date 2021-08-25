@@ -165,6 +165,7 @@
   <ItemGroup>
     <ClInclude Include="Architecture.h" />
     <ClInclude Include="InstalledPrograms.h" />
+    <ClInclude Include="ListPrograms.h" />
     <ClInclude Include="RegistryKey.h" />
     <ClInclude Include="Software.h" />
     <ClInclude Include="Util.h" />
