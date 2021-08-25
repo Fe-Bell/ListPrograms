@@ -3,6 +3,7 @@ ListPrograms
 
 This fork updates the original code from https://github.com/mavenlin/ListPrograms to work with VS2019 + VC142 + Win10SDK.
 It also provides some code cleanup and a MIT License, which was missing from the original project.
+Please see below the comments from the original developer.
 
 ============
 
