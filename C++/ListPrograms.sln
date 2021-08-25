@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.31613.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTest", "UnitTest\UnitTest.vcxproj", "{CC3F9F7D-0467-49B0-8CEA-5EC07A423A21}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C388D7EA-5C60-4795-A5C2-89BC9AE60EB1} = {C388D7EA-5C60-4795-A5C2-89BC9AE60EB1}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ListPrograms", "ListPrograms\ListPrograms.vcxproj", "{C388D7EA-5C60-4795-A5C2-89BC9AE60EB1}"
 EndProject

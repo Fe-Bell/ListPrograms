@@ -11,12 +11,12 @@ public:
 	InstalledPrograms();
 	~InstalledPrograms();
 
-	static std::vector<Software>* GetInstalledPrograms(const bool& IncludeUpdates);
+	static void GetInstalledPrograms(std::vector<Software>& v, const bool& IncludeUpdates);
 
 private:
-	static std::vector<Software>* GetInstalledProgramsImp(const bool& IncludeUpdates);
-	static std::vector<Software>* GetUninstallKeyPrograms(RegistryKey* UninstallKey, RegistryKey* ClassesKey, std::vector<Software>*, const bool& IncludeUpdates);
-	static std::vector<Software>* GetUserInstallerKeyPrograms(RegistryKey* uInstallerKey, std::vector<Software>* ExistingProgramList);
+	static void GetInstalledProgramsImp(std::vector<Software>& v, const bool& IncludeUpdates);
+	static void GetUninstallKeyPrograms(std::vector<Software>& v, RegistryKey* UninstallKey, RegistryKey* ClassesKey, const bool& IncludeUpdates);
+	static void GetUserInstallerKeyPrograms(std::vector<Software>& v, RegistryKey* uInstallerKey);
 };
 
 #endif

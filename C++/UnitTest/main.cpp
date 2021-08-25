@@ -4,10 +4,12 @@
 
 int main()
 {
-	std::vector<Software>* list = InstalledPrograms::GetInstalledPrograms(false);
-	for(std::vector<Software>::iterator iter = list->begin(); iter!=list->end(); iter++)
+	std::vector<Software> list;
+	InstalledPrograms::GetInstalledPrograms(list, false);
+	for(auto& iter : list)
 	{
-		std::wcout << iter->DisplayName << L"  " << iter->InstallLocation << L"  " << iter->Version << L"  " << iter->Icon << L"  " << (int)iter->Architecture << std::endl;
+		std::wcout << iter.DisplayName << L"  " << iter.InstallLocation << L"  " << iter.Version << L"  " << iter.Icon << L"  " << (int)iter.Architecture << std::endl;
 	}
-	delete list;
+
+	int i = getchar();
 }

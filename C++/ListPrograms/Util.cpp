@@ -1,26 +1,26 @@
 #include "Util.h"
 
-void Util::AddToList(std::vector<Software>* TheList, Software software)
+void Util::AddToList(std::vector<Software>& TheList, Software software)
 {
 	int index = -1;
-	for (size_t i = 0; i < TheList->size(); i++)
+	for (size_t i = 0; i < TheList.size(); i++)
 	{
-		if (TheList->at(i).DisplayName.compare(software.DisplayName) == 0)
+		if (TheList.at(i).DisplayName.compare(software.DisplayName) == 0)
 		{
 			index = i;
 			break;
 		}
 	}
 	if (index == -1)
-		TheList->push_back(software);
+		TheList.push_back(software);
 	else
 	{
-		Software duplicate = TheList->at(index);
+		Software duplicate = TheList.at(index);
 
 		// Merge Architecture
 		if (software.Architecture != Arch_e::UnKnown && duplicate.Architecture != Arch_e::UnKnown && duplicate.Architecture != software.Architecture)
 		{
-			TheList->push_back(software);
+			TheList.push_back(software);
 			return;
 		}
 		else
@@ -32,7 +32,7 @@ void Util::AddToList(std::vector<Software>* TheList, Software software)
 		// Merge Icon
 		if (software.Icon.compare(L"") != 0 && duplicate.Icon.compare(L"") != 0 && software.Icon.compare(duplicate.Icon) != 0)
 		{
-			TheList->push_back(software);
+			TheList.push_back(software);
 			return;
 		}
 		else
@@ -44,7 +44,7 @@ void Util::AddToList(std::vector<Software>* TheList, Software software)
 		// Merge Location
 		if (software.InstallLocation.compare(L"") != 0 && duplicate.InstallLocation.compare(L"") != 0 && software.InstallLocation.compare(duplicate.InstallLocation) != 0)
 		{
-			TheList->push_back(software);
+			TheList.push_back(software);
 			return;
 		}
 		else
@@ -56,7 +56,7 @@ void Util::AddToList(std::vector<Software>* TheList, Software software)
 		// Merge Version
 		if (software.Version.compare(L"") != 0 && duplicate.Version.compare(L"") != 0 && software.Version.compare(duplicate.Version) != 0)
 		{
-			TheList->push_back(software);
+			TheList.push_back(software);
 			return;
 		}
 		else
@@ -64,8 +64,8 @@ void Util::AddToList(std::vector<Software>* TheList, Software software)
 			if (software.Version.compare(L"") == 0)
 				software.Version = duplicate.Version;
 		}
-		TheList->erase(TheList->begin() + index);
-		TheList->push_back(software);
+		TheList.erase(TheList.begin() + index);
+		TheList.push_back(software);
 	}
 }
 
