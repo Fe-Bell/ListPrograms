@@ -1,19 +1,27 @@
 #include "program.h"
 
 #include <Windows.h>
+#include <QtWin>
+#if QT_VERSION < QT_VERSION_CHECK(5, 12, 0)
 #include <QRegExp>
+#else
+#include <QRegularExpression>
+#endif
 
 QSoftware::QSoftware(const Software& software)
 {
     // Arch
     switch(software.Architecture)
     {
-    case UnKnown:
+    case Arch_e::UnKnown:
         this->Arch = ARCH_UNKNOWN;
-    case X86:
+        break;
+    case Arch_e::X86:
         this->Arch = ARCH_X86;
-    case X64:
+        break;
+    case Arch_e::X64:
         this->Arch = ARCH_X64;
+        break;
     default:
         this->Arch = ARCH_UNKNOWN;
     }
@@ -29,11 +37,17 @@ QSoftware::QSoftware(const Software& software)
     QString IconString = QString::fromStdWString(software.Icon);
     int index = 0;
 
-    QRegExp regex("(.+)\\,(\\d+)");
-    if(regex.exactMatch(IconString))
+#if QT_VERSION < QT_VERSION_CHECK(5, 12, 0)
+    QRegExp match("(.+)\\,(\\d+)");
+    if(match.exactMatch(IconString))
+#else
+    QRegularExpression regex(QRegularExpression::anchoredPattern(QLatin1String("(.+)\\,(\\d+)")));
+    QRegularExpressionMatch match = regex.match(IconString);
+    if (match.hasMatch())
+#endif
     {
-        IconString = regex.capturedTexts()[1];
-        index = regex.capturedTexts()[2].toInt();
+        IconString = match.capturedTexts().at(1);
+        index = match.capturedTexts().at(2).toInt();
     }
     if(IconString.startsWith("\"")&&IconString.endsWith("\""))
     {
@@ -49,7 +63,7 @@ QSoftware::QSoftware(const Software& software)
     UINT Unused;
     UINT ret = PrivateExtractIconsW(out, index, 48, 48, &icon, &Unused, 1, 0);
     if( ret == 1 )
-        SoftwareIcon = QPixmap::fromWinHICON(icon);
+        SoftwareIcon = QtWin::fromHICON(icon);
 
     // Icon
     this->Icon = SoftwareIcon;
@@ -59,12 +73,12 @@ QSoftware::QSoftware(const Software& software)
 QList<QSoftware*>* QSoftware::SoftwaresOnPC()
 {
     QList<QSoftware*>* SoftwareList = new QList<QSoftware*>();
-    vector<Software>* list = InstalledPrograms::GetInstalledPrograms(false);
-    for(vector<Software>::iterator it = list->begin(); it != list->end(); it++)
+    std::vector<Software> list;
+    InstalledPrograms::GetInstalledPrograms(list, false);
+    for(std::vector<Software>::iterator it = list.begin(); it != list.end(); it++)
     {
         QSoftware* soft = new QSoftware(*it);
         SoftwareList->append(soft);
     }
-    delete list;
     return SoftwareList;
 }

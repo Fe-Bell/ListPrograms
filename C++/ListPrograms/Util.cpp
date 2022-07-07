@@ -1,4 +1,5 @@
 #include "Util.h"
+#include <algorithm>
 #include <locale>
 #include <codecvt>
 
