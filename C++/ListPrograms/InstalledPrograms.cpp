@@ -180,7 +180,6 @@ void InstalledPrograms::GetUninstallKeyPrograms(std::vector<Software>& v, Regist
 				continue;
 
             int isSystemComponent = 1;
-            bool errorCheckingSystemComponent = false;
             
 			std::wstring issystemcomponent = currentSubKey->GetValue(L"SystemComponent");
 			if( issystemcomponent.compare(L"")==0 || _wtoi(issystemcomponent.c_str())!=1 )
